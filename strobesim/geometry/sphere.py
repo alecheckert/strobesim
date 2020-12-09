@@ -6,6 +6,7 @@ observable in a thin slice of a sphere
 """
 # Numeric
 import numpy as np
+import pandas as pd 
 
 # Convert tracks from a numpy.ndarray to a pandas.DataFrame
 from .utils import tracks_to_dataframe_gapped

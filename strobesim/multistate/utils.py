@@ -3,6 +3,7 @@
 utils.py -- utilities for the strobesim.multistate module
 
 """
+import warnings
 import numpy as np 
 import pandas as pd 
 
@@ -24,7 +25,15 @@ def concat_tracks(*tracks):
         pandas.DataFrame, the concatenated trajectories
 
     """
+    # Only include trajectory dataframes that are (1) nonempty and 
+    # (2) include the "trajectory" column
+    tracks = [t for t in tracks if (not t.empty) and ("trajectory" in t.columns)]
     n = len(tracks)
+
+    # If nothing remains, return an empty DataFrame
+    if n == 0:
+        warnings.warn("concat_tracks: no trajectories found in input; returning empty output")
+        return pd.DataFrame([], columns=["trajectory", "frame", "y", "x", "dataframe_index"])
 
     # Sort the tracks dataframes by their size. The only important thing
     # here is that if at least one of the tracks dataframes is nonempty,

@@ -6,6 +6,7 @@ in a thin 3D slab of infinite XY extent
 """
 # Numeric
 import numpy as np 
+import pandas as pd
 
 # Convert tracks from a numpy.ndarray format to a pandas.DataFrame format
 from .utils import tracks_to_dataframe_gapped
