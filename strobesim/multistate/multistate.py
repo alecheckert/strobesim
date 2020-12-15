@@ -126,11 +126,64 @@ def strobe_multistate(n_tracks, diff_coefs, occupancies, motion="brownian",
 
             tracks.append(tracks_state)
 
-        # Concatenate trajectories from all states while increment
+        # Concatenate trajectories from all states while incrementing
         # redundant trajectory indices
         results.append(concat_tracks(*tracks))
 
     # Concatenate across individual rounds
+    if n_rounds > 1:
+        return concat_tracks(*results)
+    else:
+        return results[0]
+
+def strobe_generator(n_tracks, track_generator, geometry="sphere", motion_kwargs={},
+    dz=0.7, frame_interval=0.00548, loc_error=0.035, n_gaps=0, bleach_prob=0.1,
+    n_rounds=1, allow_start_outside=True, **geometry_kwargs):
+    """
+    Simulate a stroboscopic SPT experiment with an arbitrary generator for the 
+    underlying motion. This is useful, for example, when simulating trajectories
+    with state parameters that may not correspond to discrete states.
+
+    args
+    ----
+        n_tracks            :   int, the number of trajectories to simulate
+        track_generator     :   function with signature (n_tracks, **motion_kwargs),
+                                the generator for the trajectories
+        geometry            :   str, the type of observation geometry
+        motion_kwargs       :   kwargs to *track_generator*, if relevant
+        dz                  :   float, focal depth in um 
+        frame_interval      :   float, frame interval in seconds
+        loc_error           :   float, localization error in microns
+        n_gaps              :   int, number of gaps to tolerate during tracking
+        bleach_prob         :   float, probability to bleach in one frame
+        n_rounds            :   int, the number of replicates of the entire
+                                simulation to do
+        allow_start_outside :   bool, allow trajectories to start outside
+                                the focal volume
+        geometry_kwargs     :   additional keyword arguments to the geometry
+                                simulator in *strobesim.geometry*
+
+    returns
+    -------
+        pandas.DataFrame, the trajectories, with columns ["trajectory",
+            "frame", "y", "x", "z"]
+
+    """
+    # Multiple rounds of simulation to limit active memory, if desired
+    results = []
+    for round_ in range(n_rounds):
+
+        # Generate trajectories
+        tracks = track_generator(n_tracks, **motion_kwargs)
+
+        # Simulate tracking in the desired geometry
+        tracks = GEOMETRIES[geometry](tracks, dz=dz, loc_error=loc_error,
+            n_gaps=n_gaps, bleach_prob=bleach_prob,
+            allow_start_outside=allow_start_outside, **geometry_kwargs)
+
+        results.append(tracks)
+
+    # Concatenate across all individual rounds 
     if n_rounds > 1:
         return concat_tracks(*results)
     else:

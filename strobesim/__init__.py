@@ -19,5 +19,6 @@ from .geometry import (
 # Multistate SPT simulator
 from .multistate import (
     strobe_multistate,
+    strobe_generator,
     concat_tracks
 )
