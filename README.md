@@ -188,9 +188,9 @@ just a simple Brownian motion generator):
 
 Notice that the output of the function is a 3D `ndarray` with 
 the first index corresponding to the trajectory, the second 
-index corresponding to the frame interval, and the third 
+index corresponding to the frame, and the third 
 corresponding to the spatial dimension. (`strobesim` expects
-the simulation to be in 3D!)
+the simulation to be in 3D.)
 
 Then, if we wanted to simulate these trajectories in a spherical
 geometry with a 700 nm focal depth, 35 nm localization error, and 
