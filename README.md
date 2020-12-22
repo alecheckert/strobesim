@@ -31,10 +31,12 @@ to which confinement affects the results.
 
 Run
 ```
-    python setup.py install
+    python setup.py develop
 ```
 
-from the top-level `strobesim` directory.
+from the top-level `strobesim` directory. The `develop` option will enable
+you to pull new versions of `strobesim` (using `git pull`) as they become
+available.
 
 ## Usage 
 
@@ -98,7 +100,7 @@ fast),
 ```
 
 To simulate two Levy flight states with stability parameters 2.0
-and 1.5 and disperion parameters 0.1 and 3.0:
+and 1.5 and dispersion parameters 0.1 and 3.0:
 ```
     tracks = strobe_multistate(
         10000,   # 10000 trajectories
@@ -141,3 +143,74 @@ allowing them to reenter:
 
 and so on. Consult the docstring for `strobesim.multistate.strobe_multistate`
 for more information about the accepted arguments.
+
+### Simulating SPT experiments with custom types of motion
+
+`strobesim` also supports defining your own types of motion and 
+then simulating an SPT experiment with them. The command for this
+is `strobe_generator`. The idea is that you define a function that 
+produces some custom trajectories, then hand this function
+to `strobe_generator` which will then simulate the act of observing
+them in a specific geometry. The generating function must accept
+a single positional argument that gives the number of trajectories
+to simulate, and must return a 3D `ndarray` with the trajectories as
+output. 
+
+For example, we could define the following simulator (which is actually
+just a simple Brownian motion generator):
+```
+    import numpy as np
+
+    def make_tracks(number_of_tracks):
+
+        # Diffusion coefficient
+        D = 2.0
+
+        # Interval between frames (seconds)
+        frame_interval = 0.01
+
+        # Trajectory length (frames)
+        track_len = 100
+
+        # Make the jumps
+        tracks = np.random.normal(
+            scale=np.sqrt(2 * D * frame_interval),
+            size=(number_of_tracks, track_len, 3)
+        )
+
+        # Accumulate the jumps to make trajectories
+        tracks = tracks.cumsum(axis=1)
+
+        # Return the result as a 3D ndarray
+        return tracks
+
+```
+
+Notice that the output of the function is a 3D `ndarray` with 
+the first index corresponding to the trajectory, the second 
+index corresponding to the frame interval, and the third 
+corresponding to the spatial dimension. (`strobesim` expects
+the simulation to be in 3D!)
+
+Then, if we wanted to simulate these trajectories in a spherical
+geometry with a 700 nm focal depth, 35 nm localization error, and 
+a 20\% chance of bleaching in each frame, we could use
+
+```
+    from strobesim import strobe_generator
+
+    tracks = strobe_generator(
+        10000,         # make 10000 trajectories
+        make_tracks,   # trajectory-making function
+        geometry="sphere",     # confining geometry
+        dz=0.7,                # focal depth, microns
+        frame_interval=0.01,   # frame interval, seconds
+        loc_error=0.035,       # localization error, microns
+        bleach_prob=0.2,       # bleaching chance per frame
+        motion_kwargs={}       # additional kwargs to *make_tracks*
+    )
+
+```
+
+As with `strobe_multistate`, the output is a `pandas.DataFrame` with the 
+columns `x`, `y`, `z`, `trajectory`, and `frame`.
