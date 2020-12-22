@@ -25,7 +25,8 @@ to which confinement affects the results.
 
 ## Dependencies
 
-`numpy`, `pandas`, `hankel`. You can get `hankel` at [`conda-forge`](https://anaconda.org/conda-forge/hankel). 
+`numpy`, `pandas`, [`hankel`](https://anaconda.org/conda-forge/hankel). If you're using `conda`, you can get `hankel`
+via `conda install hankel -c=conda-forge`.
 
 ## Install
 
