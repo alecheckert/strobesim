@@ -213,5 +213,5 @@ a 20\% chance of bleaching in each frame, we could use
 
 ```
 
-As with `strobe_multistate`, the output is a `pandas.DataFrame` with the 
-columns `x`, `y`, `z`, `trajectory`, and `frame`.
+As with `strobe_multistate`, the output is a `pandas.DataFrame` that contains
+the columns `x`, `y`, `z`, `trajectory`, and `frame`.
