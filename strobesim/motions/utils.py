@@ -4,10 +4,14 @@ utils.py -- utilities for the strobesim.motions module
 
 """
 # Numeric
-import numpy as np 
+import numpy as np, warnings
 
 # Hankel transforms
-from hankel import SymmetricFourierTransform
+try:
+    from hankel import SymmetricFourierTransform
+except Exception as exc:
+    warnings.warn("cannot import package 'hankel'; some functionality may be missing")
+    SymmetricFourierTransform = None
 
 def create_hankel_trans(d=3):
     """

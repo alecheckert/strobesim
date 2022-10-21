@@ -28,6 +28,8 @@ to which confinement affects the results.
 `numpy`, `pandas`, [`hankel`](https://anaconda.org/conda-forge/hankel). If you're using `conda`, you can get `hankel`
 via `conda install hankel -c=conda-forge`.
 
+`hankel` is only required if you are using Levy flights.
+
 ## Install
 
 Run
