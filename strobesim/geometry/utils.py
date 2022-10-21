@@ -115,6 +115,16 @@ def tracks_to_dataframe_gapped(positions, n_gaps=0):
         L = t.shape[0]
         track_ids[c:c+L] = i 
         c += L 
+    if len(all_tracks) == 0:
+        return pd.DataFrame(
+            {
+                "trajectory": np.zeros(0, dtype=np.int64),
+                "frame": np.zeros(0, dtype=np.int64),
+                "z": np.zeros(0, dtype=np.float64),
+                "y": np.zeros(0, dtype=np.float64),
+                "x": np.zeros(0, dtype=np.float64),
+            }
+        )
     tracks_concat = np.concatenate(all_tracks, axis=0)
     result = pd.DataFrame(tracks_concat, columns=["z", "y", "x"])
     result["trajectory"] = track_ids
