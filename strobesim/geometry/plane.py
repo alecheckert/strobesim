@@ -19,7 +19,7 @@ from .utils import (
 )
 
 def strobe_plane(tracks, dz=0.7, loc_error=0.035, n_gaps=0, radius=5.0, 
-    bleach_prob=0.1, allow_start_outside=True, **kwargs):
+    bleach_prob=0.1, allow_start_outside=True, defoc=True, **kwargs):
     """
     Simulate 3D trajectories that are generated at any point inside a 
     3D slab with thickness *dz* and infinite XY extent.
@@ -43,6 +43,8 @@ def strobe_plane(tracks, dz=0.7, loc_error=0.035, n_gaps=0, radius=5.0,
         bleach_prob         :   float, bleach probability per frame
         allow_start_outside :   bool, allow trajectories to start outside
                                 the focal volume
+        defoc               :   bool, simulate defocalization by killing 
+                                detections that lie outside the focal volume
         kwargs              :   sieve; ignored
 
     returns
@@ -77,7 +79,8 @@ def strobe_plane(tracks, dz=0.7, loc_error=0.035, n_gaps=0, radius=5.0,
     # by setting their positions to NaN. Some of these molecules may
     # subsequently reenter at later frames, if the number of gaps 
     # tolerated during tracking is greater than 0.
-    tracks = impose_defoc(tracks, dz, allow_start_outside=allow_start_outside)
+    if defoc: 
+        tracks = impose_defoc(tracks, dz, allow_start_outside=allow_start_outside)
 
 
     ## BLEACHING
