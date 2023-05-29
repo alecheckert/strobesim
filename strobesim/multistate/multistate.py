@@ -39,7 +39,7 @@ from .utils import (
 def strobe_multistate(n_tracks, diff_coefs, occupancies, motion="brownian", 
     geometry="sphere", motion_kwargs={}, track_len=100, dz=0.7,
     frame_interval=0.00548, loc_error=0.035, n_gaps=0, bleach_prob=0.1,
-    n_rounds=1, allow_start_outside=True, **geometry_kwargs):
+    n_rounds=1, allow_start_outside=True, defoc=True, **geometry_kwargs):
     """
     Simulate a stroboscopic SPT experiment with multiple kinds of 
     motion.
@@ -63,7 +63,11 @@ def strobe_multistate(n_tracks, diff_coefs, occupancies, motion="brownian",
         track_len           :   int, the length of each trajectory in frames
         dz                  :   float, focal depth in um 
         frame_interval      :   float, frame interval in seconds
-        loc_error           :   float, localization error in microns
+        loc_error           :   float or list of float, localization error in microns.
+                                If float, the localization error is assumed the 
+                                same for each state. 
+                                If a list of float, then the localization error is 
+                                different for each state.
         n_gaps              :   int, number of gaps to tolerate during tracking
         bleach_prob         :   float, probability to bleach in one frame
         n_rounds            :   int, the number of replicates of the entire
@@ -90,6 +94,13 @@ def strobe_multistate(n_tracks, diff_coefs, occupancies, motion="brownian",
     nonzero = occupancies > 0
     occupancies = occupancies[nonzero]
     diff_coefs = diff_coefs[nonzero]
+
+    # Localization error
+    if isinstance(loc_error, float) or isinstance(loc_error, int):
+        loc_errors = [loc_error for j in range(len(occupancies))]
+    else:
+        loc_errors = list(loc_error)
+        assert len(loc_errors) == len(occupancies)
 
     # One of two modes for the motion keyword argument: either a 
     # single set of motion keywords for all states, or a separate
@@ -121,9 +132,14 @@ def strobe_multistate(n_tracks, diff_coefs, occupancies, motion="brownian",
 
             # Simulate tracking in the desired geometry
             tracks_state = GEOMETRIES[geometry](tracks_state, dz=dz, 
-                loc_error=loc_error, n_gaps=n_gaps, bleach_prob=bleach_prob,
-                allow_start_outside=allow_start_outside, **geometry_kwargs)
+                loc_error=loc_errors[i], n_gaps=n_gaps, bleach_prob=bleach_prob,
+                allow_start_outside=allow_start_outside, defoc=defoc,
+                **geometry_kwargs)
 
+            # Record the state from which these trajectories originated
+            tracks_state["state"] = i 
+
+            # Aggregate
             tracks.append(tracks_state)
 
         # Concatenate trajectories from all states while incrementing
@@ -153,7 +169,10 @@ def strobe_generator(n_tracks, track_generator, geometry="sphere", motion_kwargs
         motion_kwargs       :   kwargs to *track_generator*, if relevant
         dz                  :   float, focal depth in um 
         frame_interval      :   float, frame interval in seconds
-        loc_error           :   float, localization error in microns
+        loc_error           :   float, localization error in microns. Alternatively,
+                                you can have *track_generator* return a second argument
+                                giving the localization error associated with each 
+                                trajectory. In that case, set loc_error = "generated".
         n_gaps              :   int, number of gaps to tolerate during tracking
         bleach_prob         :   float, probability to bleach in one frame
         n_rounds            :   int, the number of replicates of the entire
@@ -174,7 +193,10 @@ def strobe_generator(n_tracks, track_generator, geometry="sphere", motion_kwargs
     for round_ in range(n_rounds):
 
         # Generate trajectories
-        tracks = track_generator(n_tracks, **motion_kwargs)
+        if isinstance(loc_error, str) and (loc_error == "generated"):
+            tracks, loc_error = track_generator(n_tracks, **motion_kwargs)
+        else:
+            tracks = track_generator(n_tracks, **motion_kwargs)
 
         # Simulate tracking in the desired geometry
         tracks = GEOMETRIES[geometry](tracks, dz=dz, loc_error=loc_error,

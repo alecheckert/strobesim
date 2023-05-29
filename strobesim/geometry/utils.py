@@ -72,7 +72,7 @@ def tracks_to_dataframe_gapped(positions, n_gaps=0):
         # Find the last observed localization in each trajectory, 
         # allowing for gaps
         last_obs_frame = first_obs_frame.copy()
-        active = np.ones(positions.shape[0], dtype=np.bool)
+        active = np.ones(positions.shape[0], dtype=bool)
         gap_count = np.zeros(positions.shape[0], dtype=np.int64)
 
         while active.any():
@@ -176,7 +176,7 @@ def impose_defoc(tracks, dz, allow_start_outside=True):
         # volume, also set all the remaining points for the 
         # corresponding trajectories to np.nan
         if not allow_start_outside:
-            lost = np.zeros(tracks.shape[0], dtype=np.bool)
+            lost = np.zeros(tracks.shape[0], dtype=bool)
             for frame in range(tracks.shape[1]):
                 lost = np.logical_or(lost, np.isnan(tracks[:,frame,0]))
                 tracks[lost,frame,:] = np.nan
@@ -204,7 +204,7 @@ def impose_bleach(tracks, bleach_prob=0):
 
     """
     if bleach_prob > 0:
-        bleached = np.zeros(tracks.shape[0], dtype=np.bool)
+        bleached = np.zeros(tracks.shape[0], dtype=bool)
         for frame in range(tracks.shape[1]):
             bleached = np.logical_or(
                 bleached,
@@ -224,14 +224,23 @@ def impose_loc_error(tracks, loc_error=0.0):
     ----
         tracks          :   3D ndarray of shape (n_tracks, track_length, 3),
                             trajectory points in microns
-        loc_error       :   float, 1D localization error in microns
+        loc_error       :   float, 1D localization error in microns, or 
+                            1D ndarray of shape (n_tracks), the localization
+                            error for each trajectory in microns
 
     returns
     -------
         reference to *tracks*
 
     """
-    if loc_error > 0.0:
-        tracks = tracks + np.random.normal(scale=loc_error, size=tracks.shape)
+    if isinstance(loc_error, float):
+        if loc_error > 0.0:
+            tracks = tracks + np.random.normal(scale=loc_error, size=tracks.shape)
+    elif isinstance(loc_error, np.ndarray):
+        errors = np.zeros(tracks.shape)
+        for l in range(tracks.shape[1]):
+            for d in range(tracks.shape[2]):
+                errors[:,l,d] = np.random.normal(scale=loc_error, size=tracks.shape[0])
+        tracks = tracks + errors 
 
     return tracks 

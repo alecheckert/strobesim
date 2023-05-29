@@ -22,7 +22,8 @@ from .utils import (
 from ..utils import sample_sphere 
 
 def strobe_sphere(tracks, dz=0.7, loc_error=0.035, n_gaps=0,
-    radius=5.0, bleach_prob=0.1, allow_start_outside=True, **kwargs):
+    radius=5.0, bleach_prob=0.1, allow_start_outside=True,
+    defoc=True, **kwargs):
     """
     Given a set of trajectories, place the trajectories at random points
     inside a 3D sphere and let them diffuse inside the sphere with 
@@ -49,6 +50,9 @@ def strobe_sphere(tracks, dz=0.7, loc_error=0.035, n_gaps=0,
         bleach_prob         :   float, bleach probability per frame
         allow_start_outside :   bool, allow trajectories to start outside
                                 the focal volume
+        defoc               :   bool, exclude points outside the focal volume.
+                                If *False*, then all points inside the sphere
+                                are recorded.
         kwargs              :   sieve; ignored
 
     returns
@@ -72,6 +76,12 @@ def strobe_sphere(tracks, dz=0.7, loc_error=0.035, n_gaps=0,
     # Nucleus diameter
     diameter = radius * 2
 
+    # If passed an array for the localization error
+    if isinstance(loc_error, np.ndarray):
+        variable_loc_error = True 
+    else:
+        variable_loc_error = False 
+
 
     ## STARTING POSITION FOR TRACKS
     # Add random starting positions that are sampled uniformly
@@ -88,12 +98,16 @@ def strobe_sphere(tracks, dz=0.7, loc_error=0.035, n_gaps=0,
 
     # Offset each trajectory by the starting position
     for d in range(3):
+        tracks[:,:,d] = (tracks[:,:,d].T - tracks[:,0,d]).T 
         tracks[:,:,d] = (tracks[:,:,d].T + start_pos[:,d]).T 
 
     # Destroy trajectories that start outside the focal volume
     # if desired
     if not allow_start_outside:
-        tracks = tracks[np.abs(tracks[:,0,0] <= hz), :, :]
+        take = np.abs(tracks[:,0,0] <= hz)
+        tracks = tracks[take, :, :]
+        if variable_loc_error:
+            loc_error = loc_error[take]
 
 
     ## BORDER REFLECTIONS
@@ -121,7 +135,7 @@ def strobe_sphere(tracks, dz=0.7, loc_error=0.035, n_gaps=0,
     # by setting their positions to NaN. Some of these molecules may
     # subsequently reenter at later frames, if the number of gaps 
     # tolerated during tracking is greater than 0.
-    impose_defoc(tracks, dz, allow_start_outside=allow_start_outside)
+    if defoc: impose_defoc(tracks, dz, allow_start_outside=allow_start_outside)
 
 
     ## BLEACHING
